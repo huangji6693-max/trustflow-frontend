@@ -28,6 +28,7 @@
     "@stellar/freighter-api": "^1.5.1",
     "@stellar/stellar-sdk": "^13.3.0",
     "@tanstack/react-virtual": "^3.14.7",
+    "@trustflow/sdk": "file:./packages/trustflow-sdk",
     "@uiw/react-md-editor": "^4.1.1",
     "axios": "^0.27.2",
     "bigint-conversion": "^2.4.1",

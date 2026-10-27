@@ -1,0 +1,19 @@
+{
+  "name": "@trustflow/sdk",
+  "version": "0.2.1",
+  "description": "SDK integration boundary for TrustFlow Protocol wallet and Soroban contract clients.",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./wallet": {
+      "types": "./wallet.d.ts",
+      "default": "./wallet.js"
+    }
+  },
+  "sideEffects": false,
+  "license": "MIT"
+}

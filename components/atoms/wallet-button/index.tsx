@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { setAllowed } from '@stellar/freighter-api'
+import { requestWalletAccess } from '@trustflow/sdk/wallet'
 
 interface WalletButtonProps {
   address: string
@@ -76,9 +76,9 @@ export function WalletButton({
   function handleSwap() {
     setOpen(false)
     onDismissSwitchNotice?.()
-    // Re-invoking setAllowed opens the Freighter permission popup so the user
+    // Re-invoking requestWalletAccess opens the Freighter permission popup so the user
     // can approve a different profile without disconnecting first.
-    void setAllowed()
+    void requestWalletAccess()
   }
 
   function handleDisconnect() {

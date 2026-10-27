@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { setAllowed } from '@stellar/freighter-api'
+import { requestWalletAccess } from '@trustflow/sdk/wallet'
 import styles from './style.module.css'
 
 export interface ConnectButtonProps {
@@ -49,7 +49,7 @@ export function ConnectButton({
     setLoading(true)
     setError(null)
     try {
-      await setAllowed()
+      await requestWalletAccess()
       onConnect?.()
     } catch (err) {
       const msg =

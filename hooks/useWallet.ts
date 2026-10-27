@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  isConnected,
-  getUserInfo,
-  getNetworkDetails,
-  isAllowed,
-  signTransaction as freighterSignTransaction,
-} from "@stellar/freighter-api";
+  isFreighterConnected,
+  getFreighterPublicKey,
+  getFreighterNetworkDetails,
+  isFreighterAllowed,
+  disconnectWallet,
+  signWithFreighter,
+} from "@trustflow/sdk/wallet";
 import { useWalletSync } from "./useWalletSync";
 import { isStateNewer, isStateStale } from "../utils/walletStorage";
 import type { WalletSyncState } from "../types/wallet-sync";
@@ -128,7 +129,7 @@ export function useWallet(): WalletState {
     }
 
     try {
-      const connected = await isConnected();
+      const connected = await isFreighterConnected();
       if (!connected) {
         setAccountAndRef(null);
         setIsAllowedAndRef(false);
@@ -149,11 +150,11 @@ export function useWallet(): WalletState {
       // Fetch each piece independently so one failing call doesn't
       // prevent the others from updating the UI.
       try {
-        const user = await getUserInfo();
-        if (user?.publicKey) {
+        const publicKey = await getFreighterPublicKey();
+        if (publicKey) {
           newAccount = {
-            address: user.publicKey,
-            displayName: `${user.publicKey.slice(0, 4)}...${user.publicKey.slice(-4)}`,
+            address: publicKey,
+            displayName: `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`,
           };
 
           // Detect account change (silent reconnection scenario)
@@ -174,7 +175,7 @@ export function useWallet(): WalletState {
       }
 
       try {
-        const allowed = await isAllowed();
+        const allowed = await isFreighterAllowed();
         if (currentIsAllowed !== allowed) {
           stateChanged = true;
         }
@@ -186,7 +187,7 @@ export function useWallet(): WalletState {
       }
 
       try {
-        const netDetails = await getNetworkDetails();
+        const netDetails = await getFreighterNetworkDetails();
         if (netDetails) {
           const newNet: NetworkInfo = {
             network: netDetails.network,
@@ -333,6 +334,7 @@ export function useWallet(): WalletState {
 
   const disconnect = useCallback(() => {
     disconnectedRef.current = true;
+    void disconnectWallet();
     setAccountAndRef(null);
     setNetworkAndRef(null);
     setIsAllowedAndRef(false);
@@ -348,7 +350,7 @@ export function useWallet(): WalletState {
         throw new Error("Connect a wallet before signing a transaction");
       }
 
-      return freighterSignTransaction(xdr, {
+      return signWithFreighter(xdr, {
         networkPassphrase: network?.networkPassphrase,
         accountToSign: account.address,
       });

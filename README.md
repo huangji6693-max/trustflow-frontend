@@ -34,7 +34,8 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 - **Language**: [TypeScript 5](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS 3](https://tailwindcss.com/) + CSS Modules
 - **Blockchain**: [Stellar](https://stellar.org/) + [Soroban](https://soroban.stellar.org/)
-- **Wallet**: [Freighter](https://www.freighter.app/)
+- **SDK Boundary**: `@trustflow/sdk` (`packages/trustflow-sdk`) for wallet connection & `ClientConfig` contract configuration
+- **Wallet**: [Freighter](https://www.freighter.app/) (via `@trustflow/sdk/wallet`)
 - **State Management**: React Hooks + Context API
 
 ---
@@ -180,6 +181,7 @@ Full page sections wired to on-chain data.
 
 ## 🧭 Architecture Notes
 
+- **TrustFlow SDK Integration Boundary (`@trustflow/sdk`)**: Wallet connection helpers (`requestWalletAccess`, `isFreighterConnected`, `getFreighterPublicKey`, `getFreighterNetworkDetails`, `signWithFreighter`) and Soroban contract configuration (`ClientConfig`, `createClientConfig`) are consolidated behind `@trustflow/sdk` (`packages/trustflow-sdk`). No application code outside the SDK boundary imports `@stellar/freighter-api` directly, and `shared/contracts.ts` derives its contract/RPC configuration from the SDK's `ClientConfig` while keeping `NEXT_PUBLIC_*` environment variables as the single source of truth.
 - The project currently uses the Next.js Pages Router. The Freelancer Leaderboard is implemented at `pages/leaderboard.tsx` to match the existing routing convention.
 - The leaderboard is backed by typed local sample data until the protocol exposes a public ranking endpoint or indexer query. The UI sorts the same dataset by total escrow earnings or reputation score.
 - The profile page fetches reputation, bio, and past gigs from `GET /api/profile`, which proxies to `PROFILE_API_BASE_URL` when configured and falls back to typed mock data for local/dev environments.
