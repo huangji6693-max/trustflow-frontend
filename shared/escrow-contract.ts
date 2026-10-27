@@ -1,6 +1,11 @@
 import { Address, BASE_FEE, Contract, StrKey, TransactionBuilder, nativeToScVal, scValToNative, rpc } from '@stellar/stellar-sdk'
 import { getSorobanServer } from './soroban-rpc'
 import { ESCROW_CONTRACT_ID, NETWORK_PASSPHRASE } from './contracts'
+import {
+  decodeSimulationResponse,
+  type RawSimulationResponse,
+  type TransactionSimulationPreview,
+} from './transaction-simulation'
 
 const STROOPS_PER_XLM = 10_000_000
 
@@ -146,6 +151,63 @@ export async function createGigEscrow(
   }
 
   return waitForTransaction(server, sendResult.hash)
+}
+
+/**
+ * Simulates an `init_escrow` transaction before requesting a wallet signature,
+ * returning a deterministic fee/effects preview and failure diagnostics.
+ */
+export async function simulateGigEscrow(
+  input: CreateGigEscrowInput
+): Promise<TransactionSimulationPreview> {
+  if (!ESCROW_CONTRACT_ID) {
+    throw new Error('Escrow contract is not configured (set NEXT_PUBLIC_ESCROW_CONTRACT_ID)')
+  }
+  if (input.milestones.length === 0) {
+    throw new Error('At least one milestone is required')
+  }
+
+  const totalAmountNum = input.milestones.reduce(
+    (sum, m) => sum + (Number(m.amount) || 0),
+    0
+  )
+  const context = {
+    methodName: 'init_escrow',
+    contractId: ESCROW_CONTRACT_ID,
+    depositor: input.depositor,
+    beneficiary: input.beneficiary,
+    totalAmountXlm: totalAmountNum.toString(),
+    milestoneCount: input.milestones.length,
+  }
+
+  const server = getSorobanServer()
+  const sourceAccount = await server.getAccount(input.depositor)
+  const contract = new Contract(ESCROW_CONTRACT_ID)
+
+  const operation = contract.call(
+    'init_escrow',
+    Address.fromString(input.depositor).toScVal(),
+    Address.fromString(input.beneficiary).toScVal(),
+    nativeToScVal(input.milestones.map(milestoneToScVal))
+  )
+
+  const transaction = new TransactionBuilder(sourceAccount, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(operation)
+    .setTimeout(30)
+    .build()
+
+  try {
+    const simResult = (await server.simulateTransaction(
+      transaction
+    )) as unknown as RawSimulationResponse
+    return decodeSimulationResponse(simResult, context, BASE_FEE)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return decodeSimulationResponse({ error: message }, context, BASE_FEE)
+  }
 }
 
 async function waitForTransaction(
